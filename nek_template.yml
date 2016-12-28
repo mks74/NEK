@@ -261,3 +261,7 @@ parameters:
   displayName: NEK instance name
   name: NAME
   required: true
+- description: Amount of RAM allocated to each Elasticsearch instance
+  displayName: Elastic RAM Amount
+  name: ELASTIC_RAM
+  required: true
