@@ -1,0 +1,269 @@
+apiVersion: v1
+kind: Template
+metadata:
+  creationTimestamp: null
+  name: nek
+objects:
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    creationTimestamp: null
+    generation: 5
+    labels:
+      app: elasticsearch
+    name: elasticsearch
+  spec:
+    replicas: 1
+    selector:
+      app: elasticsearch
+      deploymentconfig: elasticsearch
+    strategy:
+      resources: {}
+      rollingParams:
+        intervalSeconds: 1
+        maxSurge: 25%
+        maxUnavailable: 25%
+        timeoutSeconds: 600
+        updatePeriodSeconds: 1
+      type: Rolling
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          app: elasticsearch
+          deploymentconfig: elasticsearch
+      spec:
+        containers:
+        - env:
+          - name: INSTANCE_RAM
+            value: ${ELASTIC_RAM}
+          image: elasticsearch:latest
+          imagePullPolicy: Always
+          name: elasticsearch
+          ports:
+          - containerPort: 9200
+            protocol: TCP
+          - containerPort: 9300
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          volumeMounts:
+          - mountPath: /elasticsearch
+            name: volume-96422
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - name: volume-96422
+          persistentVolumeClaim:
+            claimName: elasticsearch-storage-elk
+    test: false
+    triggers:
+    - type: ConfigChange
+  status: {}
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    creationTimestamp: null
+    generation: 6
+    labels:
+      app: kibana
+    name: kibana
+  spec:
+    replicas: 1
+    selector:
+      app: kibana
+      deploymentconfig: kibana
+    strategy:
+      resources: {}
+      rollingParams:
+        intervalSeconds: 1
+        maxSurge: 25%
+        maxUnavailable: 25%
+        timeoutSeconds: 600
+        updatePeriodSeconds: 1
+      type: Rolling
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          app: kibana
+          deploymentconfig: kibana
+      spec:
+        containers:
+        - image: 10.6.88.23:5000/jhpelk/kibana:latest
+          imagePullPolicy: Always
+          name: kibana
+          ports:
+          - containerPort: 5601
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+    test: false
+    triggers:
+    - type: ConfigChange
+  status: {}
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    creationTimestamp: null
+    generation: 8
+    labels:
+      app: nginx-ldap
+    name: nginx-ldap
+  spec:
+    replicas: 1
+    selector:
+      app: nginx-ldap
+      deploymentconfig: nginx-ldap
+    strategy:
+      resources: {}
+      rollingParams:
+        intervalSeconds: 1
+        maxSurge: 25%
+        maxUnavailable: 25%
+        timeoutSeconds: 600
+        updatePeriodSeconds: 1
+      type: Rolling
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          app: nginx-ldap
+          deploymentconfig: nginx-ldap
+      spec:
+        containers:
+        - image: nginx-ldap:latest
+          imagePullPolicy: Always
+          name: nginx-ldap
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          volumeMounts:
+          - mountPath: /etc/nginx/ldap-secret
+            name: hemligheten
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - name: hemligheten
+          secret:
+            secretName: ldap-secret
+    test: false
+    triggers:
+    - type: ConfigChange
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - nginx-ldap
+        from:
+          kind: ImageStreamTag
+          name: nginx-ldap:latest
+          namespace: jhpelk
+      type: ImageChange
+  status: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    creationTimestamp: null
+    labels:
+      app: elasticsearch
+    name: elasticsearch
+  spec:
+    ports:
+    - name: 9200-tcp
+      port: 9200
+      protocol: TCP
+      targetPort: 9200
+    - name: 9300-tcp
+      port: 9300
+      protocol: TCP
+      targetPort: 9300
+    selector:
+      app: elasticsearch
+      deploymentconfig: elasticsearch
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      openshift.io/generated-by: elkTemplate
+    creationTimestamp: null
+    labels:
+      app: kibana
+    name: kibana
+  spec:
+    ports:
+    - name: 5601-tcp
+      port: 5601
+      protocol: TCP
+      targetPort: 5601
+    selector:
+      app: kibana
+      deploymentconfig: kibana
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    creationTimestamp: null
+    labels:
+      app: nginx-ldap
+    name: nginx-ldap
+  spec:
+    ports:
+    - name: 5601-tcp
+      port: 5601
+      protocol: TCP
+      targetPort: 5601
+    - name: 9200-tcp
+      port: 9200
+      protocol: TCP
+      targetPort: 9200
+    selector:
+      app: nginx-ldap
+      deploymentconfig: nginx-ldap
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  kind: Route
+  metadata:
+    creationTimestamp: null
+    labels:
+      app: nginx-ldap
+    name: ${NAME}-in
+  spec:
+    host: ${NAME}-in.apps.hsp.sebank.se
+    port:
+      targetPort: 9200-tcp
+    to:
+      kind: Service
+      name: nginx-ldap
+- apiVersion: v1
+  kind: Route
+  metadata:
+    annotations:
+      openshift.io/host.generated: "true"
+    creationTimestamp: null
+    labels:
+      app: nginx-ldap
+    name: ${NAME}
+  spec:
+    host: ${NAME}.apps.hsp.sebank.se
+    port:
+      targetPort: 5601-tcp
+    to:
+      kind: Service
+      name: nginx-ldap
