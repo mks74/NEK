@@ -37,7 +37,7 @@ objects:
         - env:
           - name: INSTANCE_RAM
             value: ${ELASTIC_RAM}
-          image: elasticsearch:latest
+          image: devtools-prod/elasticsearch:latest
           imagePullPolicy: Always
           name: elasticsearch
           ports:
@@ -157,15 +157,6 @@ objects:
     test: false
     triggers:
     - type: ConfigChange
-    - imageChangeParams:
-        automatic: true
-        containerNames:
-        - nginx-ldap
-        from:
-          kind: ImageStreamTag
-          name: nginx-ldap:latest
-          namespace: jhpelk
-      type: ImageChange
   status: {}
 - apiVersion: v1
   kind: Service
@@ -194,8 +185,6 @@ objects:
 - apiVersion: v1
   kind: Service
   metadata:
-    annotations:
-      openshift.io/generated-by: elkTemplate
     creationTimestamp: null
     labels:
       app: kibana
@@ -267,3 +256,8 @@ objects:
     to:
       kind: Service
       name: nginx-ldap
+parameters:
+- description: The name of this NEK instance, used as DNS name for access, needs to be unique.
+  displayName: NEK instance name
+  name: NAME
+  required: true
