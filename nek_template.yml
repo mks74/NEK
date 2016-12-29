@@ -1,6 +1,12 @@
 apiVersion: v1
 kind: Template
+labels:
+  group: nek 
+  template: nek
 metadata:
+  annotations:
+    description: Creates a NEK logger instance.
+    tags: instant-app,nginx,elastic,kibana,NEK
   creationTimestamp: null
   name: nek
 objects:
