@@ -62,8 +62,7 @@ objects:
         terminationGracePeriodSeconds: 30
         volumes:
         - name: volume-96422
-          persistentVolumeClaim:
-            claimName: elasticsearch-storage-elk
+          emptyDir: {}
     test: false
     triggers:
     - imageChangeParams:
