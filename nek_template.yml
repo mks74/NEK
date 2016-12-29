@@ -37,8 +37,8 @@ objects:
         - env:
           - name: INSTANCE_RAM
             value: ${ELASTIC_RAM}
-          image: devtools-prod/elasticsearch:latest
-          imagePullPolicy: Always
+          image: " "
+          imagePullPolicy: IfNotPresent
           name: elasticsearch
           ports:
           - containerPort: 9200
@@ -60,6 +60,15 @@ objects:
             claimName: elasticsearch-storage-elk
     test: false
     triggers:
+    - imageChangeParams:
+        automatic: false
+        containerNames:
+        - elasticsearch
+        from:
+          kind: ImageStreamTag
+          name: elasticsearch:latest
+          namespace: devtools-prod
+      type: ImageChange
     - type: ConfigChange
   status: {}
 - apiVersion: v1
@@ -92,8 +101,8 @@ objects:
           deploymentconfig: kibana
       spec:
         containers:
-        - image: 10.6.88.23:5000/jhpelk/kibana:latest
-          imagePullPolicy: Always
+        - image: " "
+          imagePullPolicy: IfNotPresent
           name: kibana
           ports:
           - containerPort: 5601
@@ -106,6 +115,15 @@ objects:
         terminationGracePeriodSeconds: 30
     test: false
     triggers:
+    - imageChangeParams:
+        automatic: false
+        containerNames:
+        - kibana
+        from:
+          kind: ImageStreamTag
+          name: kibana:latest
+          namespace: devtools-prod
+      type: ImageChange
     - type: ConfigChange
   status: {}
 - apiVersion: v1
@@ -138,8 +156,8 @@ objects:
           deploymentconfig: nginx-ldap
       spec:
         containers:
-        - image: nginx-ldap:latest
-          imagePullPolicy: Always
+        - image: " "
+          imagePullPolicy: IfNotPresent
           name: nginx-ldap
           resources: {}
           terminationMessagePath: /dev/termination-log
@@ -156,6 +174,15 @@ objects:
             secretName: ldap-secret
     test: false
     triggers:
+    - imageChangeParams:
+        automatic: false
+        containerNames:
+        - nginx-ldap
+        from:
+          kind: ImageStreamTag
+          name: nginx-ldap:latest
+          namespace: devtools-prod
+      type: ImageChange
     - type: ConfigChange
   status: {}
 - apiVersion: v1
@@ -265,3 +292,4 @@ parameters:
   displayName: Elastic RAM Amount
   name: ELASTIC_RAM
   required: true
+  value: 512M
