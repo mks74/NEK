@@ -80,6 +80,72 @@ objects:
   kind: DeploymentConfig
   metadata:
     creationTimestamp: null
+    generation: 5
+    labels:
+      app: elasticsearch-in
+    name: elasticsearch-in
+  spec:
+    replicas: 1
+    selector:
+      app: elasticsearch-in
+      deploymentconfig: elasticsearch-in
+    strategy:
+      resources: {}
+      rollingParams:
+        intervalSeconds: 1
+        maxSurge: 25%
+        maxUnavailable: 25%
+        timeoutSeconds: 600
+        updatePeriodSeconds: 1
+      type: Rolling
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          app: elasticsearch-in
+          deploymentconfig: elasticsearch-in
+      spec:
+        containers:
+        - env:
+          - name: INSTANCE_RAM
+            value: ${ELASTIC_RAM}
+          image: " "
+          imagePullPolicy: IfNotPresent
+          name: elasticsearch
+          ports:
+          - containerPort: 9200
+            protocol: TCP
+          - containerPort: 9300
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          volumeMounts:
+          - mountPath: /elasticsearch
+            name: volume-96422
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - name: volume-96422
+          emptyDir: {}
+    test: false
+    triggers:
+    - imageChangeParams:
+        automatic: false
+        containerNames:
+        - elasticsearch
+        from:
+          kind: ImageStreamTag
+          name: elasticsearch:latest
+          namespace: devtools-prod
+      type: ImageChange
+    - type: ConfigChange
+  status: {}
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    creationTimestamp: null
     generation: 6
     labels:
       app: kibana
